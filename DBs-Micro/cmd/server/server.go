@@ -2,6 +2,7 @@ package main
 
 import (
 	"DBs-Micro/dbManagement"
+	"DBs-Micro/fileReader"
 	"DBs-Micro/gRPC"
 	"google.golang.org/grpc"
 	"log"
@@ -10,6 +11,7 @@ import (
 
 func main() {
 	gRPCServer := grpc.NewServer()
+	fileReader.Client = &fileReader.FileReaderClient{}
 
 	lis, err := net.Listen("tcp", ":8081")
 
