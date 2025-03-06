@@ -12,7 +12,6 @@ message getRequest {
 
 message getResponse {
   repeated string names = 1;
-  optional string error = 2;
 }
 
 message getSingleRequest {
@@ -20,8 +19,7 @@ message getSingleRequest {
 }
 
 message getSingleResponse {
-  optional string name = 1;
-  optional string error = 2;
+  required string name = 1;
 }
 
 message createRequest {
@@ -29,8 +27,7 @@ message createRequest {
 }
 
 message createResponse {
-  optional string name = 1;
-  optional string error = 2;
+  required string name = 1;
 }
 
 message updateRequest {
@@ -39,6 +36,5 @@ message updateRequest {
 }
 
 message updateResponse {
-  optional string name = 1;
-  optional string error = 2;
+  required string name = 1;
 }

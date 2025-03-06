@@ -4,6 +4,7 @@ import (
 	"DBs-Micro/gRPC"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,14 +22,17 @@ func (D *DatabaseService) GetMultipleDBs(ctx context.Context, request *gRPC.GetR
 	jsonFile, err := os.Open("/Users/schmalzhafj/Documents/StackIT/GO-Projects/GO-Rest-API-gRPC/DBs.json")
 	// if we os.Open returns an error then handle it
 	if err != nil {
-		error := err.Error()
-		return &gRPC.GetResponse{Error: &error}, err
+		return &gRPC.GetResponse{}, err
 	}
+
 	fmt.Println("Successfully Opened DBs.json")
 	// defer the closing of our jsonFile so that we can parse it later on
 	defer jsonFile.Close()
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return &gRPC.GetResponse{}, err
+	}
 
 	var result Databases
 	json.Unmarshal([]byte(byteValue), &result)
@@ -42,8 +46,7 @@ func (D *DatabaseService) GetSingleDB(ctx context.Context, request *gRPC.GetSing
 	jsonFile, err := os.Open("/Users/schmalzhafj/Documents/StackIT/GO-Projects/GO-Rest-API-gRPC/DBs.json")
 	// if we os.Open returns an error then handle it
 	if err != nil {
-		error := err.Error()
-		return &gRPC.GetSingleResponse{Error: &error}, err
+		return &gRPC.GetSingleResponse{}, err
 	}
 
 	fmt.Println("Successfully Opened users.json")
@@ -51,18 +54,16 @@ func (D *DatabaseService) GetSingleDB(ctx context.Context, request *gRPC.GetSing
 	defer jsonFile.Close()
 
 	byteValue, err := ioutil.ReadAll(jsonFile)
-
 	if err != nil {
-		error := err.Error()
-		return &gRPC.GetSingleResponse{Error: &error}, err
+		return &gRPC.GetSingleResponse{}, err
 	}
 
 	var result Databases
 	json.Unmarshal([]byte(byteValue), &result)
 
 	if len(result.Names) < int(request.GetId()) || request.GetId() < 0 {
-		error := "Index out of range!"
-		return &gRPC.GetSingleResponse{Error: &error}, err
+		err = errors.New("index out of bounds")
+		return &gRPC.GetSingleResponse{}, err
 	}
 	dbName := result.Names[request.GetId()]
 
@@ -76,8 +77,7 @@ func (D *DatabaseService) CreateSingleDB(ctx context.Context, request *gRPC.Crea
 	jsonFile, err := os.Open(jsonPath)
 	// if we os.Open returns an error then handle it
 	if err != nil {
-		error := err.Error()
-		return &gRPC.CreateResponse{Error: &error}, err
+		return &gRPC.CreateResponse{}, err
 	}
 	fmt.Println("Successfully Opened users.json")
 	// defer the closing of our jsonFile so that we can parse it later on
@@ -85,8 +85,7 @@ func (D *DatabaseService) CreateSingleDB(ctx context.Context, request *gRPC.Crea
 
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		error := err.Error()
-		return &gRPC.CreateResponse{Error: &error}, err
+		return &gRPC.CreateResponse{}, err
 	}
 
 	var result Databases
@@ -96,14 +95,12 @@ func (D *DatabaseService) CreateSingleDB(ctx context.Context, request *gRPC.Crea
 
 	byteValue, err = json.Marshal(result)
 	if err != nil {
-		error := err.Error()
-		return &gRPC.CreateResponse{Error: &error}, err
+		return &gRPC.CreateResponse{}, err
 	}
 
 	err = os.WriteFile(jsonPath, byteValue, 0777)
 	if err != nil {
-		error := err.Error()
-		return &gRPC.CreateResponse{Error: &error}, err
+		return &gRPC.CreateResponse{}, err
 	}
 
 	return &gRPC.CreateResponse{
@@ -116,8 +113,7 @@ func (D *DatabaseService) UpdateSingleDB(ctx context.Context, request *gRPC.Upda
 	jsonFile, err := os.Open(jsonPath)
 	// if we os.Open returns an error then handle it
 	if err != nil {
-		error := err.Error()
-		return &gRPC.UpdateResponse{Error: &error}, err
+		return &gRPC.UpdateResponse{}, err
 	}
 	fmt.Println("Successfully Opened users.json")
 	// defer the closing of our jsonFile so that we can parse it later on
@@ -125,29 +121,26 @@ func (D *DatabaseService) UpdateSingleDB(ctx context.Context, request *gRPC.Upda
 
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		error := err.Error()
-		return &gRPC.UpdateResponse{Error: &error}, err
+		return &gRPC.UpdateResponse{}, err
 	}
 
 	var result Databases
 	json.Unmarshal([]byte(byteValue), &result)
 
 	if len(result.Names) < int(request.GetId()) || request.GetId() < 0 {
-		error := "Index out of range!"
-		return &gRPC.UpdateResponse{Error: &error}, err
+		err = errors.New("index out of bounds")
+		return &gRPC.UpdateResponse{}, err
 	}
 	result.Names[request.GetId()] = request.GetName()
 
 	byteValue, err = json.Marshal(result)
 	if err != nil {
-		error := err.Error()
-		return &gRPC.UpdateResponse{Error: &error}, err
+		return &gRPC.UpdateResponse{}, err
 	}
 
 	err = os.WriteFile(jsonPath, byteValue, 0777)
 	if err != nil {
-		error := err.Error()
-		return &gRPC.UpdateResponse{Error: &error}, err
+		return &gRPC.UpdateResponse{}, err
 	}
 
 	return &gRPC.UpdateResponse{

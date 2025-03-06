@@ -38,10 +38,10 @@ func getMultipleDBs(c *gin.Context) {
 	response, err := client.GetMultipleDBs(context.Background(), &gRPC.GetRequest{})
 
 	if err != nil {
-		log.Fatalf("GetAvailableDBs failed: %v", err)
+		c.IndentedJSON(http.StatusInternalServerError, err)
+	} else {
+		c.IndentedJSON(http.StatusOK, response)
 	}
-
-	c.IndentedJSON(http.StatusOK, response)
 }
 
 func getSingleDBs(c *gin.Context) {
@@ -64,10 +64,14 @@ func getSingleDBs(c *gin.Context) {
 	response, err := client.GetSingleDB(context.Background(), &gRPC.GetSingleRequest{Id: &dbID})
 
 	if err != nil {
-		log.Fatalf("GetAvailableDBs failed: %v", err)
+		if err.Error() == "rpc error: code = Unknown desc = index out of bounds" {
+			c.IndentedJSON(http.StatusNotFound, err.Error())
+		} else {
+			c.IndentedJSON(http.StatusInternalServerError, err)
+		}
+	} else {
+		c.IndentedJSON(http.StatusOK, response)
 	}
-
-	c.IndentedJSON(http.StatusOK, response)
 }
 
 func createSingleDB(c *gin.Context) {
@@ -87,10 +91,10 @@ func createSingleDB(c *gin.Context) {
 	response, err := client.CreateSingleDB(context.Background(), &gRPC.CreateRequest{Name: &newDB.Name})
 
 	if err != nil {
-		log.Fatalf("GetAvailableDBs failed: %v", err)
+		c.IndentedJSON(http.StatusInternalServerError, err)
+	} else {
+		c.IndentedJSON(http.StatusOK, response)
 	}
-
-	c.IndentedJSON(http.StatusOK, response)
 }
 
 func updateSingleDB(c *gin.Context) {
@@ -117,8 +121,8 @@ func updateSingleDB(c *gin.Context) {
 	response, err := client.UpdateSingleDB(context.Background(), &gRPC.UpdateRequest{Id: &dbID, Name: &newDB.Name})
 
 	if err != nil {
-		log.Fatalf("GetAvailableDBs failed: %v", err)
+		c.IndentedJSON(http.StatusInternalServerError, err)
+	} else {
+		c.IndentedJSON(http.StatusOK, response)
 	}
-
-	c.IndentedJSON(http.StatusOK, response)
 }
