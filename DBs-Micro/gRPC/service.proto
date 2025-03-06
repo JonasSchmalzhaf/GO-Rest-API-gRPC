@@ -1,0 +1,40 @@
+option go_package = "/Users/schmalzhafj/Documents/StackIT/GO-Projects/GO-Rest-API-gRPC/DBs-Micro/gRPC";
+
+service DatabaseService {
+  rpc getMultipleDBs (getRequest) returns (getResponse) {}
+  rpc getSingleDB (getSingleRequest) returns (getSingleResponse) {}
+  rpc createSingleDB (createRequest) returns (createResponse) {}
+  rpc updateSingleDB (updateRequest) returns (updateResponse) {}
+}
+
+message getRequest {
+}
+
+message getResponse {
+  repeated string names = 1;
+}
+
+message getSingleRequest {
+  required int32 id = 1;
+}
+
+message getSingleResponse {
+  required string name = 1;
+}
+
+message createRequest {
+  required string name = 1;
+}
+
+message createResponse {
+  required string name = 1;
+}
+
+message updateRequest {
+  required int32 id = 1;
+  required string name = 2;
+}
+
+message updateResponse {
+  required string name = 1;
+}
