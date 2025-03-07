@@ -5,6 +5,7 @@ service DatabaseService {
   rpc getSingleDB (getSingleRequest) returns (getSingleResponse) {}
   rpc createSingleDB (createRequest) returns (createResponse) {}
   rpc updateSingleDB (updateRequest) returns (updateResponse) {}
+  rpc deleteSingleDB (deleteRequest) returns (deleteResponse) {}
 }
 
 message getRequest {
@@ -38,3 +39,9 @@ message updateRequest {
 message updateResponse {
   required string name = 1;
 }
+
+message deleteRequest {
+  required int32 id = 1;
+}
+
+message deleteResponse {}

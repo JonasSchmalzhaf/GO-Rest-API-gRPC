@@ -21,6 +21,7 @@ func main() {
 	router.GET("/db-management/databases/:id", getSingleDBs)
 	router.POST("/db-management/databases", createSingleDB)
 	router.PUT("/db-management/databases/:id", updateSingleDB)
+	router.DELETE("/db-management/databases/:id", deleteSingleDB)
 	router.Run("localhost:8080")
 }
 
@@ -91,7 +92,15 @@ func createSingleDB(c *gin.Context) {
 	response, err := client.CreateSingleDB(context.Background(), &gRPC.CreateRequest{Name: &newDB.Name})
 
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, err)
+		if err.Error() == "rpc error: code = Unknown desc = index out of bounds" {
+			c.IndentedJSON(http.StatusNotFound, err.Error())
+		} else if err.Error() == "rpc error: code = Unknown desc = name is already in use" {
+			c.IndentedJSON(http.StatusConflict, err.Error())
+		} else if err.Error() == "rpc error: code = Unknown desc = name is not common name" {
+			c.IndentedJSON(http.StatusBadRequest, err.Error())
+		} else {
+			c.IndentedJSON(http.StatusInternalServerError, err)
+		}
 	} else {
 		c.IndentedJSON(http.StatusOK, response)
 	}
@@ -121,7 +130,45 @@ func updateSingleDB(c *gin.Context) {
 	response, err := client.UpdateSingleDB(context.Background(), &gRPC.UpdateRequest{Id: &dbID, Name: &newDB.Name})
 
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, err)
+		if err.Error() == "rpc error: code = Unknown desc = index out of bounds" {
+			c.IndentedJSON(http.StatusNotFound, err.Error())
+		} else if err.Error() == "rpc error: code = Unknown desc = name is already in use" {
+			c.IndentedJSON(http.StatusConflict, err.Error())
+		} else if err.Error() == "rpc error: code = Unknown desc = name is not common name" {
+			c.IndentedJSON(http.StatusBadRequest, err.Error())
+		} else {
+			c.IndentedJSON(http.StatusInternalServerError, err)
+		}
+	} else {
+		c.IndentedJSON(http.StatusOK, response)
+	}
+}
+
+func deleteSingleDB(c *gin.Context) {
+	conn, err := grpc.Dial("localhost:8081", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	dbIDString := c.Param("id")
+	dbID64, err := strconv.ParseInt(dbIDString, 10, 32)
+	if err != nil {
+		log.Fatalf("failed to parse dbID: %v", err)
+	}
+	dbID := int32(dbID64)
+
+	if err != nil {
+		log.Fatalf("failed to create gRPC connection: %v", err)
+	}
+
+	defer conn.Close()
+
+	client := gRPC.NewDatabaseServiceClient(conn)
+
+	response, err := client.DeleteSingleDB(context.Background(), &gRPC.DeleteRequest{Id: &dbID})
+
+	if err != nil {
+		if err.Error() == "rpc error: code = Unknown desc = index out of bounds" {
+			c.IndentedJSON(http.StatusNotFound, err.Error())
+		} else {
+			c.IndentedJSON(http.StatusInternalServerError, err)
+		}
 	} else {
 		c.IndentedJSON(http.StatusOK, response)
 	}

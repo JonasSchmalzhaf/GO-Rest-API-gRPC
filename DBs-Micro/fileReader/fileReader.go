@@ -47,7 +47,7 @@ func (F *FileReaderClient) ReadFile() (Databases, error) {
 	return result, nil
 }
 
-func (F *FileReaderClient) WrtieFile(databases Databases) error {
+func (F *FileReaderClient) WriteFile(databases Databases) error {
 	byteValue, err := json.Marshal(databases)
 	if err != nil {
 		return err

@@ -5,6 +5,7 @@ import (
 	"DBs-Micro/gRPC"
 	"context"
 	"errors"
+	"regexp"
 )
 
 type DatabaseService struct {
@@ -40,7 +41,7 @@ func (D *DatabaseService) GetSingleDB(ctx context.Context, request *gRPC.GetSing
 		return &gRPC.GetSingleResponse{}, err
 	}
 
-	if len(result.Names) < int(request.GetId()) || request.GetId() < 0 {
+	if len(result.Names)-1 < int(request.GetId()) || request.GetId() < 0 {
 		err = errors.New("index out of bounds")
 		return &gRPC.GetSingleResponse{}, err
 	}
@@ -59,6 +60,18 @@ func (D *DatabaseService) CreateSingleDB(ctx context.Context, request *gRPC.Crea
 	result, err := fileReader.Client.ReadFile()
 	if err != nil {
 		return &gRPC.CreateResponse{}, err
+	}
+
+	if isDouble(result.Names, request.GetName()) {
+		return &gRPC.CreateResponse{}, errors.New("name is already in use")
+	}
+
+	isCommonName, err := regexp.MatchString("^[a-z|A-Z|0-9]+[^I]\\s?db|DB|sql|SQL{1}$", request.GetName())
+	if err != nil {
+		return &gRPC.CreateResponse{}, err
+	}
+	if !isCommonName {
+		return &gRPC.CreateResponse{}, errors.New("name is not common name")
 	}
 
 	result.Names = append(result.Names, request.GetName())
@@ -83,9 +96,19 @@ func (D *DatabaseService) UpdateSingleDB(ctx context.Context, request *gRPC.Upda
 		return &gRPC.UpdateResponse{}, err
 	}
 
-	if len(result.Names) < int(request.GetId()) || request.GetId() < 0 {
+	if len(result.Names)-1 < int(request.GetId()) || request.GetId() < 0 {
 		err = errors.New("index out of bounds")
 		return &gRPC.UpdateResponse{}, err
+	}
+	if isDouble(result.Names, request.GetName()) {
+		return &gRPC.UpdateResponse{}, errors.New("name is already in use")
+	}
+	isCommonName, err := regexp.MatchString("^[a-z|A-Z|0-9]+[^I]\\s?db|DB|sql|SQL{1}$", request.GetName())
+	if err != nil {
+		return &gRPC.UpdateResponse{}, err
+	}
+	if !isCommonName {
+		return &gRPC.UpdateResponse{}, errors.New("name is not common name")
 	}
 	result.Names[request.GetId()] = request.GetName()
 
@@ -97,4 +120,41 @@ func (D *DatabaseService) UpdateSingleDB(ctx context.Context, request *gRPC.Upda
 	return &gRPC.UpdateResponse{
 		Name: request.Name,
 	}, nil
+}
+
+func (D *DatabaseService) DeleteSingleDB(ctx context.Context, request *gRPC.DeleteRequest) (*gRPC.DeleteResponse, error) {
+	if fileReader.Client == nil {
+		return &gRPC.DeleteResponse{}, errors.New("file reader is not initialized")
+	}
+
+	result, err := fileReader.Client.ReadFile()
+	if err != nil {
+		return &gRPC.DeleteResponse{}, err
+	}
+
+	if len(result.Names)-1 < int(request.GetId()) || request.GetId() < 0 {
+		err = errors.New("index out of bounds")
+		return &gRPC.DeleteResponse{}, err
+	}
+
+	var out []string
+	out = append(out, result.Names[:request.GetId()]...)
+	out = append(out, result.Names[request.GetId()+1:]...)
+
+	err = fileReader.Client.WriteFile(fileReader.Databases(Databases{Names: out}))
+	if err != nil {
+		return &gRPC.DeleteResponse{}, err
+	}
+
+	return &gRPC.DeleteResponse{}, nil
+}
+
+func isDouble(databases []string, newName string) bool {
+	for _, db := range databases {
+		if newName == db {
+			return true
+		}
+	}
+
+	return false
 }
